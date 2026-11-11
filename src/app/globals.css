@@ -1,0 +1,171 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@theme {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-slab), ui-serif, Georgia, serif;
+
+  /* Granite & moss: the old site's dark charcoal with its green accent, deepened for contrast */
+  --color-granite-50: #f6f6f4;
+  --color-granite-100: #e9e8e4;
+  --color-granite-200: #d4d2cb;
+  --color-granite-300: #b3b0a6;
+  --color-granite-500: #737066;
+  --color-granite-700: #3f3d37;
+  --color-granite-800: #2b2a26;
+  --color-granite-900: #1c1b19;
+  --color-moss-50: #eef8ef;
+  --color-moss-100: #d6efd9;
+  --color-moss-500: #3f9d4e;
+  --color-moss-600: #2f7f3d;
+  --color-moss-700: #256533;
+  --color-chalk: #fbfaf7;
+  --color-ember: #d9622b;
+}
+
+body {
+  background: var(--color-chalk);
+  color: var(--color-granite-900);
+}
+
+/* ---------- Article body (imported WordPress HTML) ---------- */
+.article {
+  --tw-prose-links: var(--color-moss-700);
+}
+.article h2,
+.article h3 {
+  font-family: var(--font-display);
+  scroll-margin-top: 6rem;
+}
+.article h2 a,
+.article h3 a {
+  text-decoration: none;
+  color: inherit;
+}
+.article h2 a:hover,
+.article h3 a:hover {
+  color: var(--color-moss-700);
+}
+.article img {
+  border-radius: 0.75rem;
+  margin-inline: auto;
+  max-height: 28rem;
+  width: auto;
+}
+.article figure {
+  margin-block: 1.5rem;
+}
+.article .lead {
+  font-size: 1.15em;
+  color: var(--color-granite-700);
+}
+
+/* Product rows: description beside image + price + button */
+.article .wp-cols {
+  display: grid;
+  gap: 1.5rem;
+  margin-block: 1.5rem;
+  align-items: start;
+}
+@media (min-width: 768px) {
+  .article .wp-cols {
+    grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  }
+}
+.article .wp-col > :first-child {
+  margin-top: 0;
+}
+.article .wp-cols:has(.label) {
+  background: var(--color-granite-50);
+  border: 1px solid var(--color-granite-100);
+  border-radius: 1rem;
+  padding: 1.25rem 1.5rem;
+}
+.article .label {
+  margin: 0 0 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.8rem;
+}
+.article .wp-col:first-child .label {
+  color: var(--color-moss-700);
+}
+.article .wp-col:nth-child(2) .label {
+  color: var(--color-ember);
+}
+.article .price {
+  text-align: center;
+  font-size: 1.35rem;
+  font-weight: 700;
+  margin-block: 0.5rem;
+}
+.article .price a {
+  text-decoration: none;
+  color: var(--color-granite-900);
+}
+.article .cta {
+  text-align: center;
+}
+.article .btn {
+  display: inline-block;
+  background: var(--color-moss-600);
+  color: white;
+  font-weight: 600;
+  padding: 0.7rem 1.6rem;
+  border-radius: 999px;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+.article .btn:hover {
+  background: var(--color-moss-700);
+}
+
+/* TablePress comparison tables */
+.article .table-wrap {
+  overflow-x: auto;
+  margin-block: 1.5rem;
+  border: 1px solid var(--color-granite-100);
+  border-radius: 1rem;
+}
+.article .table-wrap table {
+  margin: 0;
+  min-width: 36rem;
+}
+.article .table-wrap th {
+  background: var(--color-granite-50);
+  padding: 0.75rem;
+}
+.article .table-wrap td {
+  vertical-align: middle;
+  padding: 0.75rem;
+}
+.article .table-wrap .btn {
+  padding: 0.45rem 0.9rem;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+.article .table-wrap img {
+  max-height: 5rem;
+  margin: 0;
+}
+
+/* FAQ accordions */
+.article details {
+  border: 1px solid var(--color-granite-100);
+  border-radius: 0.75rem;
+  padding: 0.9rem 1.2rem;
+  margin-block: 0.75rem;
+  background: white;
+}
+.article summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.article details[open] summary {
+  margin-bottom: 0.5rem;
+}
+.article .video iframe {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 0.75rem;
+}
