@@ -8,7 +8,13 @@ const adminEmails = (process.env.ADMIN_EMAILS ?? "")
   .map((e) => e.trim().toLowerCase())
   .filter(Boolean);
 
+/** Vercel preview and production URLs, so sign-in works on every deployment */
+const vercelOrigins = [process.env.VERCEL_URL, process.env.VERCEL_BRANCH_URL, process.env.VERCEL_PROJECT_PRODUCTION_URL]
+  .filter(Boolean)
+  .map((host) => `https://${host}`);
+
 export const auth = betterAuth({
+  trustedOrigins: [...vercelOrigins, ...(process.env.NEXT_PUBLIC_SITE_URL ? [process.env.NEXT_PUBLIC_SITE_URL] : [])],
   database: drizzleAdapter(db, {
     provider: "pg",
     schema: {

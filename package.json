@@ -14,7 +14,8 @@
     "typecheck": "tsc --noEmit",
     "db:seed": "tsx scripts/seed.ts",
     "seed:export": "tsx scripts/seed-export.ts",
-    "vercel-build": "drizzle-kit migrate && tsx scripts/seed.ts && next build"
+    "vercel-build": "tsx scripts/check-env.ts && drizzle-kit migrate && tsx scripts/seed.ts && next build",
+    "check-env": "tsx scripts/check-env.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.2.0",
