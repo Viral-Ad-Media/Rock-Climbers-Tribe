@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { PostCard, PostGrid } from "@/components/post-card";
-import { SearchIcon } from "@/components/site-header";
-import { getCategories, getLatestPosts } from "@/lib/content";
+import { HomeHero } from "@/components/home-hero";
+import { PostGrid } from "@/components/post-card";
+import { getAllPublishedSlugs, getCategories, getLatestPosts } from "@/lib/content";
 import { site } from "@/lib/site";
 
 export const revalidate = 3600;
@@ -14,54 +14,17 @@ const CATEGORY_BLURBS: Record<string, string> = {
 };
 
 export default async function HomePage() {
-  const [english, spanish, categories] = await Promise.all([
+  const [english, spanish, categories, slugs] = await Promise.all([
     getLatestPosts(12, "en"),
     getLatestPosts(3, "es"),
     getCategories(),
+    getAllPublishedSlugs(),
   ]);
-  const [featured, ...rest] = english;
+  const rest = english.slice(3);
 
   return (
     <>
-      <section className="relative overflow-hidden bg-granite-900 text-white">
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 opacity-40 [background:radial-gradient(60rem_30rem_at_85%_-10%,var(--color-moss-700),transparent),radial-gradient(40rem_20rem_at_0%_110%,#4b4a43,transparent)]"
-        />
-        <div className="relative mx-auto grid max-w-6xl gap-10 px-4 py-16 md:grid-cols-[1.1fr_1fr] md:py-24">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-moss-100">Climbing gear, tested and compared</p>
-            <h1 className="mt-4 font-display text-4xl font-bold leading-tight md:text-5xl">
-              Unbiased reviews for top climbing products
-            </h1>
-            <p className="mt-5 max-w-xl text-lg leading-relaxed text-granite-200">
-              Straight answers on shoes, harnesses, ropes, helmets and the rest of the rack, plus beginner guides that
-              help you climb safer and spend smarter.
-            </p>
-            <form action="/search/" className="mt-8 flex max-w-md items-center gap-2 rounded-full bg-white p-1.5 pl-5 text-granite-900 shadow-xl">
-              <SearchIcon />
-              <label htmlFor="hero-q" className="sr-only">
-                Search reviews
-              </label>
-              <input
-                id="hero-q"
-                name="q"
-                placeholder="Search harnesses, ropes, shoes…"
-                className="min-w-0 flex-1 bg-transparent py-2 outline-none placeholder:text-granite-500"
-              />
-              <button className="rounded-full bg-moss-600 px-5 py-2 text-sm font-semibold text-white hover:bg-moss-700">
-                Search
-              </button>
-            </form>
-          </div>
-          {featured && (
-            <div className="self-center">
-              <p className="mb-3 text-sm font-semibold text-granite-300">Newest guide</p>
-              <PostCard post={featured} priority />
-            </div>
-          )}
-        </div>
-      </section>
+      <HomeHero posts={english.slice(0, 3)} total={slugs.length} available={new Set(slugs.map((x) => x.slug))} />
 
       <section className="mx-auto max-w-6xl px-4 pt-16">
         <h2 className="font-display text-2xl font-bold">Browse by category</h2>
