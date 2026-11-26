@@ -16,6 +16,7 @@ const cardFields = {
   publishedAt: post.publishedAt,
   updatedAt: post.updatedAt,
   lang: post.lang,
+  readingMinutes: sql<number>`greatest(1, round(coalesce(array_length(regexp_split_to_array(trim(regexp_replace(${post.content}, '<[^>]+>', ' ', 'g')), '\\s+'), 1), 0) / 230.0))::int`,
 };
 
 export type PostCard = {
@@ -27,6 +28,8 @@ export type PostCard = {
   publishedAt: Date | null;
   updatedAt: Date;
   lang: string;
+  /** Estimated reading time at ~230 words a minute */
+  readingMinutes: number;
 };
 
 export async function getLatestPosts(limit = 12, lang?: string): Promise<PostCard[]> {
@@ -170,6 +173,17 @@ export async function searchPosts(q: string): Promise<PostCard[]> {
 
 export async function getRedirects() {
   return db.select().from(redirect);
+}
+
+/** Category slugs for every published post, keyed by post id (for client-side filtering) */
+export async function getPostCategorySlugs(): Promise<Record<number, string[]>> {
+  const rows = await db
+    .select({ postId: postCategory.postId, slug: category.slug })
+    .from(postCategory)
+    .innerJoin(category, eq(postCategory.categoryId, category.id));
+  const map: Record<number, string[]> = {};
+  for (const r of rows) (map[r.postId] ??= []).push(r.slug);
+  return map;
 }
 
 /** Affiliate products referenced by [product] shortcodes in a post */
