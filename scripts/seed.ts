@@ -2,22 +2,15 @@
  * Loads seed/content.json into the database.
  * By default it only runs when the post table is empty, so it is safe to run on every
  * deploy without overwriting edits made in the admin. Pass --force to update anyway.
+ * (To push later content fixes to a live database, use `npm run seo:sync`.)
  *
  *   npm run db:seed [-- --force]
  */
 import { config } from "dotenv";
 config({ path: ".env.local" });
 
-import { readFileSync } from "node:fs";
-import { count, inArray } from "drizzle-orm";
-
-type SeedPost = {
-  slug: string;
-  categories: string[];
-  publishedAt: string | null;
-  updatedAt: string;
-  [key: string]: unknown;
-};
+import { count } from "drizzle-orm";
+import { loadSeed, upsertSeedPost } from "./lib/seed-utils";
 
 async function main() {
   const { db, schema } = await import("../src/db");
@@ -28,36 +21,11 @@ async function main() {
     return;
   }
 
-  const data = JSON.parse(readFileSync("seed/content.json", "utf8")) as {
-    categories: (typeof schema.category.$inferInsert)[];
-    posts: SeedPost[];
-    redirects: (typeof schema.redirect.$inferInsert)[];
-  };
-
+  const data = loadSeed();
   for (const c of data.categories) {
     await db.insert(schema.category).values(c).onConflictDoUpdate({ target: schema.category.slug, set: c });
   }
-  const cats = await db.select().from(schema.category);
-  const catId = new Map(cats.map((c) => [c.slug, c.id]));
-
-  for (const { categories, publishedAt, updatedAt, ...rest } of data.posts) {
-    const values = {
-      ...(rest as Omit<typeof schema.post.$inferInsert, "publishedAt" | "updatedAt">),
-      publishedAt: publishedAt ? new Date(publishedAt) : null,
-      updatedAt: new Date(updatedAt),
-    };
-    const [row] = await db
-      .insert(schema.post)
-      .values(values)
-      .onConflictDoUpdate({ target: schema.post.slug, set: values })
-      .returning({ id: schema.post.id });
-    await db.delete(schema.postCategory).where(inArray(schema.postCategory.postId, [row.id]));
-    const ids = categories.map((s) => catId.get(s)).filter((x): x is number => !!x);
-    if (ids.length) {
-      await db.insert(schema.postCategory).values(ids.map((categoryId) => ({ postId: row.id, categoryId })));
-    }
-  }
-
+  for (const p of data.posts) await upsertSeedPost(db, schema, p, data.posts);
   for (const r of data.redirects) {
     await db
       .insert(schema.redirect)

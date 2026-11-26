@@ -14,8 +14,12 @@
     "typecheck": "tsc --noEmit",
     "db:seed": "tsx scripts/seed.ts",
     "seed:export": "tsx scripts/seed-export.ts",
-    "vercel-build": "tsx scripts/check-env.ts && drizzle-kit migrate && tsx scripts/seed.ts && next build",
-    "check-env": "tsx scripts/check-env.ts"
+    "vercel-build": "tsx scripts/check-env.ts && drizzle-kit migrate && tsx scripts/seed.ts && tsx scripts/seo-sync.ts && tsx scripts/media-index.ts && next build",
+    "check-env": "tsx scripts/check-env.ts",
+    "seo:audit": "tsx scripts/seo-audit.ts",
+    "seo:sync": "tsx scripts/seo-sync.ts",
+    "seo:optimize": "tsx scripts/seo-optimize.ts",
+    "media:index": "tsx scripts/media-index.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.2.0",

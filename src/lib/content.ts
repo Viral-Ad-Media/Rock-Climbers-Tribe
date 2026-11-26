@@ -2,9 +2,10 @@ import "server-only";
 import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { db, schema } from "@/db";
 
-const { post, category, postCategory, redirect } = schema;
+const { post, category, postCategory, postTag, tag, comment, redirect } = schema;
 
-const published = eq(post.status, "publish");
+/** Published and not scheduled for the future */
+const published = and(eq(post.status, "publish"), sql`(${post.publishedAt} is null or ${post.publishedAt} <= now())`)!;
 
 const cardFields = {
   id: post.id,
@@ -38,7 +39,7 @@ export async function getLatestPosts(limit = 12, lang?: string): Promise<PostCar
 }
 
 export async function getAllPublishedSlugs() {
-  return db.select({ slug: post.slug, updatedAt: post.updatedAt }).from(post).where(published);
+  return db.select({ slug: post.slug, updatedAt: post.updatedAt }).from(post).where(and(published, eq(post.robotsNoindex, false)));
 }
 
 export async function getPostBySlug(slug: string) {
@@ -53,7 +54,60 @@ export async function getPostBySlug(slug: string) {
     .from(postCategory)
     .innerJoin(category, eq(postCategory.categoryId, category.id))
     .where(eq(postCategory.postId, row.id));
-  return { ...row, categories };
+  const tags = await getPostTags(row.id);
+  return { ...row, categories, tags };
+}
+
+/** Any post or page by id, whatever its status (for staff previews) */
+export async function getPostForPreview(id: number) {
+  const [row] = await db.select().from(post).where(eq(post.id, id)).limit(1);
+  if (!row) return null;
+  const categories = await db
+    .select({ slug: category.slug, name: category.name })
+    .from(postCategory)
+    .innerJoin(category, eq(postCategory.categoryId, category.id))
+    .where(eq(postCategory.postId, row.id));
+  return { ...row, categories, tags: await getPostTags(row.id) };
+}
+
+export async function getPostTags(postId: number) {
+  return db
+    .select({ slug: tag.slug, name: tag.name })
+    .from(postTag)
+    .innerJoin(tag, eq(postTag.tagId, tag.id))
+    .where(eq(postTag.postId, postId))
+    .orderBy(tag.name);
+}
+
+export async function getTagBySlug(slug: string) {
+  const [row] = await db.select().from(tag).where(eq(tag.slug, slug)).limit(1);
+  return row ?? null;
+}
+
+export async function getPostsWithTag(tagId: number): Promise<PostCard[]> {
+  return db
+    .select(cardFields)
+    .from(post)
+    .innerJoin(postTag, eq(postTag.postId, post.id))
+    .where(and(published, eq(postTag.tagId, tagId)))
+    .orderBy(desc(post.publishedAt));
+}
+
+export async function getTagsInUse() {
+  return db
+    .select({ slug: tag.slug, updatedAt: sql<Date>`max(${post.updatedAt})` })
+    .from(tag)
+    .innerJoin(postTag, eq(postTag.tagId, tag.id))
+    .innerJoin(post, and(eq(post.id, postTag.postId), published))
+    .groupBy(tag.slug);
+}
+
+export async function getApprovedComments(postId: number) {
+  return db
+    .select({ id: comment.id, parentId: comment.parentId, authorName: comment.authorName, authorUrl: comment.authorUrl, content: comment.content, createdAt: comment.createdAt })
+    .from(comment)
+    .where(and(eq(comment.postId, postId), eq(comment.status, "approved")))
+    .orderBy(comment.createdAt);
 }
 
 export async function getRelatedPosts(postId: number, limit = 3): Promise<PostCard[]> {
