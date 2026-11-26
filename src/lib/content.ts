@@ -1,5 +1,5 @@
 import "server-only";
-import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
+import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { db, schema } from "@/db";
 
 const { post, category, postCategory, postTag, tag, comment, redirect } = schema;
@@ -184,4 +184,15 @@ export async function getPostCategorySlugs(): Promise<Record<number, string[]>> 
   const map: Record<number, string[]> = {};
   for (const r of rows) (map[r.postId] ??= []).push(r.slug);
   return map;
+}
+
+/** Affiliate products referenced by [product] shortcodes in a post */
+export async function getProductsBySlugs(slugs: string[]) {
+  if (!slugs.length) return [];
+  try {
+    return await db.select().from(schema.product).where(inArray(schema.product.slug, slugs));
+  } catch {
+    // The product table may not exist yet during the first build after this migration
+    return [];
+  }
 }

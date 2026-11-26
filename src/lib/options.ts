@@ -25,6 +25,13 @@ export const OPTION_DEFAULTS = {
   seo_noindex_tags: "0",
   seo_twitter_username: "",
   seo_facebook_url: "",
+  toc_enabled_posts: "1",
+  toc_enabled_pages: "0",
+  toc_min_headings: "3",
+  toc_title: "Table of Contents",
+  toc_title_es: "En este artículo",
+  affiliate_new_tab: "1",
+  affiliate_button_text: "Check Price",
 } as const;
 
 export type OptionKey = keyof typeof OPTION_DEFAULTS;

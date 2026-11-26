@@ -121,6 +121,8 @@ export const post = pgTable(
     commentStatus: text("comment_status").notNull().default("open"),
     /** Status before it was trashed, so Restore puts it back */
     trashedFrom: text("trashed_from"),
+    /** Show the table of contents on this post (when the site-wide setting allows it) */
+    showToc: boolean("show_toc").notNull().default(true),
     publishedAt: timestamp("published_at"),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
     /** WordPress post ID, kept so re-imports update instead of duplicating */
@@ -208,6 +210,30 @@ export const media = pgTable("media", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+/** Affiliate products, inserted into posts as product boxes with [product id="slug"] */
+export const product = pgTable("product", {
+  id: serial("id").primaryKey(),
+  slug: text("slug").notNull().unique(),
+  name: text("name").notNull(),
+  /** The affiliate URL the visitor is sent to through /go/{slug}/ */
+  url: text("url").notNull(),
+  merchant: text("merchant"),
+  image: text("image"),
+  imageAlt: text("image_alt"),
+  price: text("price"),
+  /** 0-5, one decimal */
+  rating: text("rating"),
+  badge: text("badge"),
+  description: text("description"),
+  /** One item per line */
+  pros: text("pros"),
+  cons: text("cons"),
+  buttonText: text("button_text"),
+  clicks: integer("clicks").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 /** Site settings, like wp_options */
 export const option = pgTable("option", {
   key: text("key").primaryKey(),
@@ -223,5 +249,6 @@ export const redirect = pgTable("redirect", {
 export type Post = typeof post.$inferSelect;
 export type Category = typeof category.$inferSelect;
 export type Tag = typeof tag.$inferSelect;
+export type Product = typeof product.$inferSelect;
 export type Comment = typeof comment.$inferSelect;
 export type Media = typeof media.$inferSelect;

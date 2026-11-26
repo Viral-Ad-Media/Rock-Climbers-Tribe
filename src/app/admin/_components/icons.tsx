@@ -20,6 +20,12 @@ export const Icons = {
   seo: (
     <svg {...base}><path d="M3 15h2.5v2H3v-2Zm4-4h2.5v6H7v-6Zm4-3h2.5v9H11V8Zm4-5h2.5v14H15V3Z" /></svg>
   ),
+  products: (
+    <svg {...base}><path d="M10.6 2H17a1 1 0 0 1 1 1v6.4a1 1 0 0 1-.3.7l-7.9 7.9a1 1 0 0 1-1.4 0L2 11.6a1 1 0 0 1 0-1.4l7.9-7.9a1 1 0 0 1 .7-.3Zm3.9 2.3a1.2 1.2 0 1 0 0 2.4 1.2 1.2 0 0 0 0-2.4Z" /></svg>
+  ),
+  toc: (
+    <svg {...base}><path d="M3 4h2v2H3V4Zm4 0h10v2H7V4ZM3 9h2v2H3V9Zm4 0h10v2H7V9Zm-4 5h2v2H3v-2Zm4 0h10v2H7v-2Z" /></svg>
+  ),
   users: (
     <svg {...base}><path d="M10 3a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7Zm0 8.5c3.6 0 6.5 1.8 6.5 4V17h-13v-1.5c0-2.2 2.9-4 6.5-4Z" /></svg>
   ),

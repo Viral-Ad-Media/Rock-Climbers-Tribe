@@ -135,6 +135,7 @@ export async function savePost(_prev: SaveState, form: FormData): Promise<SaveSt
     robotsNoindex: form.get("robotsNoindex") === "1",
     schemaType: ["BlogPosting", "Article", "NewsArticle", "none"].includes(str(form, "schemaType")) ? str(form, "schemaType") : "BlogPosting",
     commentStatus: form.get("commentStatus") === "open" ? "open" : "closed",
+    showToc: form.get("showToc") !== "0",
     publishedAt,
     updatedAt: new Date(),
   };

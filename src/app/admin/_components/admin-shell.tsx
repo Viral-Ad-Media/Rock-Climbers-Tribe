@@ -90,6 +90,15 @@ export function AdminShell({
       ],
     },
     { label: "Comments", href: "/admin/comments/", icon: "comments", count: pendingComments },
+    {
+      label: "Affiliate Products",
+      href: "/admin/products/",
+      icon: "products",
+      sub: [
+        { label: "All Products", href: "/admin/products/" },
+        { label: "Add New Product", href: "/admin/products/new/" },
+      ],
+    },
     "sep",
     {
       label: "Rank Math SEO",
@@ -113,11 +122,13 @@ export function AdminShell({
       href: "/admin/settings/",
       icon: "settings",
       adminOnly: true,
-      match: ["/admin/settings/general/", "/admin/settings/reading/", "/admin/settings/discussion/"],
+      match: ["/admin/settings/general/", "/admin/settings/reading/", "/admin/settings/discussion/", "/admin/settings/toc/", "/admin/settings/affiliates/"],
       sub: [
         { label: "General", href: "/admin/settings/general/" },
         { label: "Reading", href: "/admin/settings/reading/" },
         { label: "Discussion", href: "/admin/settings/discussion/" },
+        { label: "Table of Contents", href: "/admin/settings/toc/" },
+        { label: "Affiliate Links", href: "/admin/settings/affiliates/" },
       ],
     },
   ];

@@ -41,6 +41,7 @@ export async function EditorPage({ type, id, message }: { type: "post" | "page";
     robotsNoindex: row?.robotsNoindex ?? false,
     schemaType: row?.schemaType ?? options.seo_default_schema,
     commentStatus: row?.commentStatus ?? options.default_comment_status,
+    showToc: row?.showToc ?? true,
     publishedAt: row?.publishedAt?.toISOString() ?? null,
     updatedAt: row?.updatedAt?.toISOString() ?? null,
   };
@@ -56,6 +57,10 @@ export async function EditorPage({ type, id, message }: { type: "post" | "page";
         siteName={options.blogname}
         siteUrl={site.url}
         message={message}
+        toc={{
+          enabled: (initial.type === "page" ? options.toc_enabled_pages : options.toc_enabled_posts) === "1",
+          minHeadings: Math.max(1, Number(options.toc_min_headings) || 3),
+        }}
       />
     </div>
   );
