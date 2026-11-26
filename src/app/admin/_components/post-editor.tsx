@@ -4,10 +4,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState, useDeferredValue, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { analyzeSeo, countWords, htmlToText } from "@/lib/seo/analyze";
+import { withHeadingIds } from "@/lib/toc";
 import { addCategoryInline, postRowAction, savePost, type SaveState } from "../actions";
 import type { MediaItem } from "../media/actions";
 import { Icons } from "./icons";
 import { MediaModal } from "./media-modal";
+import { ProductModal } from "./product-modal";
 import { SeoBox, type SeoFields } from "./seo-box";
 
 export type EditorPost = {
@@ -29,6 +31,7 @@ export type EditorPost = {
   robotsNoindex: boolean;
   schemaType: string;
   commentStatus: string;
+  showToc: boolean;
   publishedAt: string | null;
   updatedAt: string | null;
 };
@@ -46,7 +49,17 @@ function fmt(iso: string) {
 /* Classic editor: Visual / Text tabs                                  */
 /* ------------------------------------------------------------------ */
 
-function ClassicEditor({ value, onChange, onAddMedia }: { value: string; onChange: (v: string) => void; onAddMedia: (insert: (html: string) => void) => void }) {
+function ClassicEditor({
+  value,
+  onChange,
+  onAddMedia,
+  onAddProduct,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  onAddMedia: (insert: (html: string) => void) => void;
+  onAddProduct: (insert: (html: string) => void) => void;
+}) {
   const [mode, setMode] = useState<"visual" | "text">("visual");
   const visual = useRef<HTMLDivElement>(null);
   const text = useRef<HTMLTextAreaElement>(null);
@@ -66,6 +79,30 @@ function ClassicEditor({ value, onChange, onAddMedia }: { value: string; onChang
   const saveSelection = () => {
     const sel = window.getSelection();
     if (sel && sel.rangeCount && visual.current?.contains(sel.anchorNode)) savedRange.current = sel.getRangeAt(0).cloneRange();
+  };
+  /** Inserts block HTML (like a product shortcode paragraph) after the paragraph holding the caret, never inside it */
+  const insertBlock = (html: string) => {
+    const root = visual.current;
+    if (mode !== "visual" || !root) return insertHtml(`\n${html}\n`);
+    const range = savedRange.current;
+    // Caret between blocks (container is the editor itself): insert after the block before it
+    let node: Node | null = range ? (range.startContainer === root ? root.childNodes[range.startOffset - 1] ?? null : range.startContainer) : null;
+    while (node && node.parentNode !== root) node = node.parentNode;
+    const tpl = document.createElement("template");
+    tpl.innerHTML = html;
+    const last = tpl.content.lastChild;
+    if (node && node.parentNode === root) root.insertBefore(tpl.content, node.nextSibling);
+    else root.appendChild(tpl.content);
+    if (last) {
+      const r = document.createRange();
+      r.setStartAfter(last);
+      r.collapse(true);
+      savedRange.current = r;
+      const sel = window.getSelection();
+      sel?.removeAllRanges();
+      sel?.addRange(r.cloneRange());
+    }
+    onChange(root.innerHTML);
   };
   const insertHtml = (html: string) => {
     if (mode === "visual" && visual.current) {
@@ -98,9 +135,14 @@ function ClassicEditor({ value, onChange, onAddMedia }: { value: string; onChang
   return (
     <div>
       <div className="wp-editor-tools">
+        <span>
         <button type="button" className="wp-btn" style={{ marginBottom: 4 }} onClick={() => { saveSelection(); onAddMedia(insertHtml); }}>
           {Icons.media} Add Media
         </button>
+        <button type="button" className="wp-btn" style={{ marginBottom: 4, marginLeft: 6 }} onClick={() => { saveSelection(); onAddProduct(insertBlock); }}>
+          {Icons.products} Add Product
+        </button>
+        </span>
         <div className="wp-editor-tabs">
           <button type="button" className={mode === "visual" ? "active" : ""} onClick={() => setMode("visual")}>Visual</button>
           <button type="button" className={mode === "text" ? "active" : ""} onClick={() => setMode("text")}>Text</button>
@@ -187,6 +229,7 @@ export function PostEditor({
   siteName,
   siteUrl,
   message,
+  toc: tocSettings,
 }: {
   initial: EditorPost;
   categories: { id: number; name: string }[];
@@ -196,6 +239,7 @@ export function PostEditor({
   siteName: string;
   siteUrl: string;
   message?: string;
+  toc: { enabled: boolean; minHeadings: number };
 }) {
   const router = useRouter();
   const [state, formAction, saving] = useActionState<SaveState, FormData>(savePost, message ? { saved: true, message } : {});
@@ -228,8 +272,10 @@ export function PostEditor({
   const [lang, setLang] = useState(initial.lang);
   const [author, setAuthor] = useState(initial.author);
   const [comments, setComments] = useState(initial.commentStatus === "open");
+  const [showToc, setShowToc] = useState(initial.showToc);
   const [editing, setEditing] = useState<"" | "status" | "visibility" | "date">("");
   const [modal, setModal] = useState<null | { kind: "insert"; insert: (html: string) => void } | { kind: "featured" }>(null);
+  const [productInsert, setProductInsert] = useState<null | ((html: string) => void)>(null);
   const [dirty, setDirty] = useState(false);
   const first = useRef(true);
 
@@ -238,6 +284,7 @@ export function PostEditor({
 
   // Live Rank Math-style analysis (deferred so typing stays smooth)
   const deferredContent = useDeferredValue(content);
+  const tocHeadings = useMemo(() => withHeadingIds(deferredContent).toc, [deferredContent]);
   const result = useMemo(
     () =>
       analyzeSeo({
@@ -260,7 +307,7 @@ export function PostEditor({
       return;
     }
     setDirty(true);
-  }, [title, content, excerpt, seo, cover, checked, tags, status, visibility, date, lang, author, comments]);
+  }, [title, content, excerpt, seo, cover, checked, tags, status, visibility, date, lang, author, comments, showToc]);
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (state.saved) setDirty(false);
@@ -315,6 +362,7 @@ export function PostEditor({
       <input type="hidden" name="lang" value={lang} />
       <input type="hidden" name="author" value={author} />
       <input type="hidden" name="commentStatus" value={comments ? "open" : "closed"} />
+      <input type="hidden" name="showToc" value={showToc ? "1" : "0"} />
       {checked.map((c) => (
         <input key={c} type="hidden" name="categories" value={c} />
       ))}
@@ -380,7 +428,12 @@ export function PostEditor({
           </div>
 
           <div style={{ marginTop: 16 }}>
-            <ClassicEditor value={content} onChange={setContent} onAddMedia={(insert) => setModal({ kind: "insert", insert })} />
+            <ClassicEditor
+              value={content}
+              onChange={setContent}
+              onAddMedia={(insert) => setModal({ kind: "insert", insert })}
+              onAddProduct={(insert) => setProductInsert(() => insert)}
+            />
           </div>
 
           <div style={{ marginTop: 20 }}>
@@ -602,6 +655,33 @@ export function PostEditor({
           )}
 
           <div className="postbox">
+            <div className="postbox-header"><h2>Table of Contents</h2></div>
+            <div className="inside">
+              <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <input type="checkbox" checked={showToc} onChange={(e) => setShowToc(e.target.checked)} /> Show table of contents
+              </label>
+              {!tocSettings.enabled ? (
+                <p className="toc-count">
+                  Turned off for all {isPost ? "posts" : "pages"} in <Link href="/admin/settings/toc/">Settings → Table of Contents</Link>.
+                </p>
+              ) : tocHeadings.length < tocSettings.minHeadings ? (
+                <p className="toc-count">
+                  {tocHeadings.length} heading{tocHeadings.length === 1 ? "" : "s"} found. It appears once the {noun.toLowerCase()} has {tocSettings.minHeadings} or more H2 headings.
+                </p>
+              ) : showToc ? (
+                <>
+                  <p className="toc-count">{tocHeadings.length} headings will be listed:</p>
+                  <ol style={{ margin: "6px 0 0 18px", padding: 0, fontSize: 12, maxHeight: 160, overflowY: "auto" }}>
+                    {tocHeadings.map((h) => <li key={h.id}>{h.text}</li>)}
+                  </ol>
+                </>
+              ) : (
+                <p className="toc-count">Hidden on this {noun.toLowerCase()}.</p>
+              )}
+            </div>
+          </div>
+
+          <div className="postbox">
             <div className="postbox-header"><h2>Featured image</h2></div>
             <div className="inside">
               {cover.url ? (
@@ -627,6 +707,15 @@ export function PostEditor({
         </div>
       </div>
 
+      {productInsert && (
+        <ProductModal
+          onClose={() => setProductInsert(null)}
+          onInsert={(html) => {
+            productInsert(html);
+            setProductInsert(null);
+          }}
+        />
+      )}
       {modal && (
         <MediaModal
           title={modal.kind === "featured" ? "Featured image" : "Add media"}

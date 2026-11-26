@@ -8,7 +8,7 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
   const options = await getOptions();
   if (options.blog_public === "0") return { rules: { userAgent: "*", disallow: "/" } };
   return {
-    rules: { userAgent: "*", allow: "/", disallow: ["/admin/", "/account/", "/api/", "/search/", "/preview/"] },
+    rules: { userAgent: "*", allow: "/", disallow: ["/admin/", "/account/", "/api/", "/search/", "/preview/", "/go/"] },
     sitemap: `${site.url}/sitemap.xml`,
   };
 }
