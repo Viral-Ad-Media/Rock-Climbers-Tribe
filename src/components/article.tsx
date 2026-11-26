@@ -1,9 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { PostGrid } from "@/components/post-card";
-import { getApprovedComments, getPostBySlug, getRelatedPosts } from "@/lib/content";
+import { getApprovedComments, getPostBySlug, getProductsBySlugs, getRelatedPosts } from "@/lib/content";
 import { getOptions } from "@/lib/options";
 import { buildPostSchema, jsonLd } from "@/lib/seo/schema";
+import { extractProductSlugs, renderProductShortcodes } from "@/lib/products";
 import { formatDate, site } from "@/lib/site";
 import { withHeadingIds } from "@/lib/toc";
 import { CommentForm } from "./comment-form";
@@ -11,13 +12,22 @@ import { CommentForm } from "./comment-form";
 export type FullPost = NonNullable<Awaited<ReturnType<typeof getPostBySlug>>>;
 
 export async function Article({ post, preview = false }: { post: FullPost; preview?: boolean }) {
-  const [related, comments, options] = await Promise.all([
+  const [related, comments, options, products] = await Promise.all([
     post.type === "post" ? getRelatedPosts(post.id) : [],
     getApprovedComments(post.id),
     getOptions(),
+    getProductsBySlugs(extractProductSlugs(post.content)),
   ]);
-  const { html, toc } = withHeadingIds(post.content);
-  const hasAffiliateLinks = /amzn\.to|amazon\.com/.test(post.content);
+  const { html: withIds, toc } = withHeadingIds(post.content);
+  const html = renderProductShortcodes(withIds, products, {
+    newTab: options.affiliate_new_tab === "1",
+    buttonText: options.affiliate_button_text,
+    lang: post.lang,
+  });
+  // Table of contents: the site-wide setting for this post type, then the post's own switch
+  const tocAllowed = (post.type === "page" ? options.toc_enabled_pages : options.toc_enabled_posts) === "1";
+  const showToc = tocAllowed && post.showToc && toc.length >= Math.max(1, Number(options.toc_min_headings) || 3);
+  const hasAffiliateLinks = products.length > 0 || /amzn\.to|amazon\.com/.test(post.content);
   const es = post.lang === "es";
   const primary = post.categories[0];
   const showCover = post.coverImage && !post.content.includes(post.coverImage);
@@ -44,7 +54,7 @@ export async function Article({ post, preview = false }: { post: FullPost; previ
         )}
       </nav>
 
-      <div className="mt-6 grid gap-12 lg:grid-cols-[minmax(0,1fr)_17rem]">
+      <div className={`mt-6 grid gap-12 ${showToc ? "lg:grid-cols-[minmax(0,1fr)_17rem]" : ""}`}>
         <article className="min-w-0">
           <header className="max-w-3xl">
             <h1 className="font-display text-3xl font-bold leading-tight md:text-[2.6rem]">{post.title}</h1>
@@ -120,11 +130,11 @@ export async function Article({ post, preview = false }: { post: FullPost; previ
           )}
         </article>
 
-        {toc.length > 2 && (
+        {showToc && (
           <aside className="hidden lg:block">
             <div className="sticky top-24 rounded-2xl border border-granite-100 bg-white p-5">
               <p className="text-xs font-semibold uppercase tracking-wider text-granite-500">
-                {es ? "En este artículo" : "In this article"}
+                {es ? options.toc_title_es : options.toc_title}
               </p>
               <ol className="mt-3 max-h-[70vh] space-y-2 overflow-y-auto text-sm">
                 {toc.map((h) => (

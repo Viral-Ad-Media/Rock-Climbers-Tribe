@@ -1148,3 +1148,69 @@
     display: none !important;
   }
 }
+
+/* ---------- Affiliate products ---------- */
+.button-link {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--wp-blue);
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+}
+.button-link:hover {
+  color: var(--wp-blue-dark);
+}
+.field-label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 3px;
+}
+.two-col {
+  display: grid;
+  gap: 12px;
+}
+@media (min-width: 700px) {
+  .two-col {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.wp-list-table .column-thumb {
+  width: 56px;
+}
+.product-picker {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+.product-picker button {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  text-align: left;
+  background: #fff;
+  border: 1px solid #dcdcde;
+  padding: 8px;
+  cursor: pointer;
+}
+.product-picker button:hover {
+  border-color: var(--wp-blue);
+}
+.product-picker button.selected {
+  border-color: var(--wp-blue);
+  box-shadow: 0 0 0 2px var(--wp-blue);
+}
+.product-picker img,
+.product-picker .ph {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  background: #f6f7f7;
+  flex-shrink: 0;
+}
+.toc-count {
+  color: #646970;
+  font-size: 12px;
+  margin: 6px 0 0;
+}
