@@ -1,9 +1,21 @@
+/**
+ * Public URL. Production sets NEXT_PUBLIC_SITE_URL; Vercel preview deployments fall back to
+ * their own branch URL so canonical links and the sitemap never point previews at production.
+ */
+function siteUrl() {
+  const explicit = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  if (explicit) return explicit.replace(/\/$/, "");
+  const previewHost = process.env.NEXT_PUBLIC_VERCEL_BRANCH_URL || process.env.NEXT_PUBLIC_VERCEL_URL;
+  if (process.env.NEXT_PUBLIC_VERCEL_ENV === "preview" && previewHost) return `https://${previewHost}`;
+  return "https://rockclimberstribe.com";
+}
+
 export const site = {
   name: "Rock Climbers Tribe",
   tagline: "Unbiased reviews for top climbing products",
   description:
     "Honest climbing gear reviews and beginner guides: shoes, harnesses, ropes, helmets, carabiners and more, tested and compared for rock climbers.",
-  url: (process.env.NEXT_PUBLIC_SITE_URL ?? "https://rockclimberstribe.com").replace(/\/$/, ""),
+  url: siteUrl(),
   adsenseClient: process.env.NEXT_PUBLIC_ADSENSE_CLIENT ?? "",
   gaId: process.env.NEXT_PUBLIC_GA_ID ?? "",
   metaPixelId: process.env.NEXT_PUBLIC_META_PIXEL_ID ?? "",

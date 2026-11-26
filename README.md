@@ -42,6 +42,21 @@ Set these environment variables: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_A
 Vercel runs `npm run vercel-build`, which migrates the database, seeds it if it is empty,
 then builds. Seeding never overwrites a database that already has posts.
 
+### Preview deployments
+
+Every branch and pull request gets a Preview deployment, and its build runs the same
+migrations, seed and SEO sync. So Preview must **never** use the production database:
+
+- `DATABASE_URL` (Preview) points at the Neon branch `preview`, a copy of `main`.
+  To refresh it with current production content, reset it from its parent in the Neon console
+  (Branches > preview > Reset from parent).
+- `BETTER_AUTH_SECRET` (Preview) is its own random secret.
+- `BETTER_AUTH_URL` and `NEXT_PUBLIC_SITE_URL` are left unset on Preview; the app uses the
+  deployment's own URL instead.
+
+If a Preview build fails with "Missing required environment variables for the Preview
+environment", one of those two variables was removed from the Preview environment in Vercel.
+
 ## Content scripts
 
 - `npm run import:wp -- path/to/export.sql`: re-import from a WordPress SQL export (phpMyAdmin
