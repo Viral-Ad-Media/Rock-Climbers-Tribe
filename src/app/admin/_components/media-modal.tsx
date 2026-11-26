@@ -101,13 +101,15 @@ export function MediaModal({
   button,
   onClose,
   onSelect,
+  initialTab = "library",
 }: {
   title: string;
   button: string;
   onClose: () => void;
   onSelect: (item: MediaItem) => void;
+  initialTab?: "upload" | "library";
 }) {
-  const [tab, setTab] = useState<"upload" | "library">("library");
+  const [tab, setTab] = useState<"upload" | "library">(initialTab);
   const [items, setItems] = useState<MediaItem[] | null>(null);
   const [selected, setSelected] = useState<MediaItem | null>(null);
   const [search, setSearch] = useState("");

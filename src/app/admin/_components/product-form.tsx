@@ -2,8 +2,9 @@
 
 import { useActionState, useMemo, useState } from "react";
 import type { Product } from "@/db/schema";
-import { productBoxHtml } from "@/lib/products";
+import { parseBoxDesign, type BoxDesign } from "@/lib/products";
 import { saveProduct, type ProductState } from "../products/actions";
+import { BoxDesignControls, BoxPreview } from "./box-design";
 import { MediaModal } from "./media-modal";
 import { wpDate } from "./ui";
 
@@ -12,7 +13,19 @@ type Draft = {
   rating: string; badge: string; description: string; pros: string; cons: string; buttonText: string;
 };
 
-export function ProductForm({ product, defaultButton, newTab, message }: { product?: Product; defaultButton: string; newTab: boolean; message?: string }) {
+export function ProductForm({
+  product,
+  defaultButton,
+  newTab,
+  siteDesign,
+  message,
+}: {
+  product?: Product;
+  defaultButton: string;
+  newTab: boolean;
+  siteDesign: BoxDesign;
+  message?: string;
+}) {
   const [state, action, pending] = useActionState<ProductState, FormData>(saveProduct, {});
   const [d, setD] = useState<Draft>({
     name: product?.name ?? "", slug: product?.slug ?? "", url: product?.url ?? "", merchant: product?.merchant ?? "",
@@ -20,22 +33,21 @@ export function ProductForm({ product, defaultButton, newTab, message }: { produ
     badge: product?.badge ?? "", description: product?.description ?? "", pros: product?.pros ?? "", cons: product?.cons ?? "",
     buttonText: product?.buttonText ?? "",
   });
-  const [picking, setPicking] = useState(false);
+  const [picking, setPicking] = useState<null | "upload" | "library">(null);
+  const [ownDesign, setOwnDesign] = useState(!!product?.design);
+  const [design, setDesign] = useState(() => parseBoxDesign(product?.design, siteDesign));
+  const shownDesign = ownDesign ? design : siteDesign;
   const set = (k: keyof Draft) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setD({ ...d, [k]: e.target.value });
 
-  const preview = useMemo(
-    () =>
-      productBoxHtml(
-        {
-          id: 0, clicks: 0, createdAt: new Date(), updatedAt: new Date(),
-          slug: d.slug || "preview", name: d.name || "Product name", url: d.url || "#",
-          merchant: d.merchant || null, image: d.image || null, imageAlt: d.imageAlt || null, price: d.price || null,
-          rating: d.rating || null, badge: d.badge || null, description: d.description || null, pros: d.pros || null,
-          cons: d.cons || null, buttonText: d.buttonText || null,
-        },
-        { newTab, buttonText: defaultButton },
-      ),
-    [d, newTab, defaultButton],
+  const previewProduct = useMemo<Product>(
+    () => ({
+      id: 0, clicks: 0, createdAt: new Date(0), updatedAt: new Date(0), design: null,
+      slug: d.slug || "preview", name: d.name || "Product name", url: d.url || "#",
+      merchant: d.merchant || null, image: d.image || null, imageAlt: d.imageAlt || null, price: d.price || null,
+      rating: d.rating || null, badge: d.badge || null, description: d.description || null, pros: d.pros || null,
+      cons: d.cons || null, buttonText: d.buttonText || null,
+    }),
+    [d],
   );
   const shortcode = `[product id="${product?.slug ?? (d.slug || "…")}"]`;
   const notice = state.error ? null : state.saved ? "Product updated." : message;
@@ -102,9 +114,25 @@ export function ProductForm({ product, defaultButton, newTab, message }: { produ
           </div>
 
           <div className="postbox">
-            <div className="postbox-header"><h2>Preview</h2></div>
-            <div className="inside" style={{ background: "#fbfaf7" }}>
-              <div style={{ maxWidth: 720, margin: "0 auto", fontFamily: "var(--font-inter), system-ui, sans-serif" }} dangerouslySetInnerHTML={{ __html: preview }} />
+            <div className="postbox-header"><h2>Box Design</h2></div>
+            <div className="inside">
+              <input type="hidden" name="design" value={ownDesign ? JSON.stringify(design) : ""} />
+              <label className="check-row" style={{ marginBottom: 12 }}>
+                <input type="checkbox" checked={!ownDesign} onChange={(e) => setOwnDesign(!e.target.checked)} /> Use the site-wide design from{" "}
+                <a href="/admin/settings/affiliates/" target="_blank">Settings → Affiliate Links</a>
+              </label>
+              <div className="design-split">
+                <div>
+                  {ownDesign ? (
+                    <BoxDesignControls value={design} onChange={setDesign} />
+                  ) : (
+                    <p className="description" style={{ marginTop: 0 }}>
+                      This product follows the site-wide design, so changing that design updates every product box at once. Untick the box above to give this product its own layout, colors and button style.
+                    </p>
+                  )}
+                </div>
+                <BoxPreview product={previewProduct} design={shownDesign} buttonText={defaultButton} newTab={newTab} sticky />
+              </div>
             </div>
           </div>
         </div>
@@ -129,6 +157,52 @@ export function ProductForm({ product, defaultButton, newTab, message }: { produ
           </div>
 
           <div className="postbox">
+            <div className="postbox-header"><h2>Product image</h2></div>
+            <div className="inside">
+              <input type="hidden" name="image" value={d.image} />
+              {d.image ? (
+                <>
+                  <button type="button" onClick={() => setPicking("library")} className="image-pick has-image" aria-label="Replace product image">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={d.image} alt="" />
+                  </button>
+                  <p className="description" style={{ margin: "6px 0 0" }}>Click the image to replace it.</p>
+                  <label style={{ display: "block", marginTop: 8 }}>
+                    <span className="field-label">Alt text</span>
+                    <input name="imageAlt" type="text" style={{ width: "100%" }} value={d.imageAlt} onChange={set("imageAlt")} placeholder={d.name} />
+                  </label>
+                  <p style={{ margin: "8px 0 0", display: "flex", gap: 12, flexWrap: "wrap" }}>
+                    <button type="button" className="button-link" onClick={() => setPicking("upload")}>Upload a new image</button>
+                    <button type="button" className="button-link" onClick={() => setD({ ...d, image: "", imageAlt: "" })} style={{ color: "#b32d2e" }}>Remove product image</button>
+                  </p>
+                </>
+              ) : (
+                <>
+                  <button type="button" className="image-pick" onClick={() => setPicking("upload")}>
+                    <span className="dashicons-upload" aria-hidden="true">⬆</span>
+                    <strong>Upload product image</strong>
+                    <span>JPG, PNG or WebP, up to 4 MB</span>
+                  </button>
+                  <p style={{ margin: "8px 0 0" }}>
+                    <button type="button" className="button-link" onClick={() => setPicking("library")}>Choose from Media Library</button>
+                  </p>
+                  <label style={{ display: "block", marginTop: 10 }}>
+                    <span className="field-label">…or paste an image URL</span>
+                    <input type="url" style={{ width: "100%" }} placeholder="https://" onBlur={(e) => e.target.value && setD({ ...d, image: e.target.value.trim() })} />
+                  </label>
+                </>
+              )}
+              <p className="description" style={{ margin: "10px 0 0" }}>
+                {shownDesign.imageLink ? (
+                  <>The image links to <code>{`/go/${d.slug || "product-name"}/`}</code>, the same affiliate link as the button.</>
+                ) : (
+                  <>The image is not clickable. Turn on &ldquo;Clicking the image opens the product link&rdquo; under Box Design to link it.</>
+                )}
+              </p>
+            </div>
+          </div>
+
+          <div className="postbox">
             <div className="postbox-header"><h2>Shortcode</h2></div>
             <div className="inside">
               <input type="text" readOnly value={shortcode} onFocus={(e) => e.target.select()} style={{ width: "100%", fontFamily: "monospace" }} aria-label="Shortcode" />
@@ -146,45 +220,17 @@ export function ProductForm({ product, defaultButton, newTab, message }: { produ
             </div>
           </div>
 
-          <div className="postbox">
-            <div className="postbox-header"><h2>Product image</h2></div>
-            <div className="inside">
-              <input type="hidden" name="image" value={d.image} />
-              {d.image ? (
-                <>
-                  <button type="button" onClick={() => setPicking(true)} style={{ display: "block", width: "100%", padding: 0, border: 0, background: "none" }} aria-label="Replace product image">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={d.image} alt="" style={{ maxWidth: "100%", maxHeight: 200, objectFit: "contain" }} />
-                  </button>
-                  <label style={{ display: "block", marginTop: 8 }}>
-                    <span className="field-label">Alt text</span>
-                    <input name="imageAlt" type="text" style={{ width: "100%" }} value={d.imageAlt} onChange={set("imageAlt")} placeholder={d.name} />
-                  </label>
-                  <p style={{ margin: "8px 0 0" }}>
-                    <button type="button" className="button-link" onClick={() => setD({ ...d, image: "", imageAlt: "" })} style={{ color: "#b32d2e" }}>Remove product image</button>
-                  </p>
-                </>
-              ) : (
-                <>
-                  <button type="button" className="button-link" onClick={() => setPicking(true)}>Set product image</button>
-                  <label style={{ display: "block", marginTop: 10 }}>
-                    <span className="field-label">…or paste an image URL</span>
-                    <input type="url" style={{ width: "100%" }} placeholder="https://" onBlur={(e) => e.target.value && setD({ ...d, image: e.target.value.trim() })} />
-                  </label>
-                </>
-              )}
-            </div>
-          </div>
         </div>
       </div>
       {picking && (
         <MediaModal
           title="Product image"
           button="Set product image"
-          onClose={() => setPicking(false)}
+          initialTab={picking}
+          onClose={() => setPicking(null)}
           onSelect={(m) => {
             setD({ ...d, image: m.url, imageAlt: d.imageAlt || m.alt || "" });
-            setPicking(false);
+            setPicking(null);
           }}
         />
       )}

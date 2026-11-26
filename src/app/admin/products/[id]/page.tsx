@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { db, schema } from "@/db";
 import { getOptions } from "@/lib/options";
+import { parseBoxDesign } from "@/lib/products";
 import { requireStaff } from "@/lib/session";
 import { ProductForm } from "../../_components/product-form";
 import { PageHeading } from "../../_components/ui";
@@ -17,7 +18,7 @@ export default async function EditProduct({ params, searchParams }: PageProps<"/
   return (
     <div className="wp-wrap">
       <PageHeading title="Edit Product" action={{ label: "Add New Product", href: "/admin/products/new/" }} />
-      <ProductForm product={product} message={message} defaultButton={o.affiliate_button_text} newTab={o.affiliate_new_tab === "1"} />
+      <ProductForm product={product} message={message} defaultButton={o.affiliate_button_text} newTab={o.affiliate_new_tab === "1"} siteDesign={parseBoxDesign(o.affiliate_box_design)} />
     </div>
   );
 }

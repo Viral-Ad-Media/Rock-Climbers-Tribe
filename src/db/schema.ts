@@ -229,6 +229,8 @@ export const product = pgTable("product", {
   pros: text("pros"),
   cons: text("cons"),
   buttonText: text("button_text"),
+  /** JSON with this product's own box design; null means the site default (Settings > Affiliate Links) */
+  design: text("design"),
   clicks: integer("clicks").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
