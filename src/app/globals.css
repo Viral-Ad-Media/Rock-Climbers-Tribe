@@ -176,13 +176,12 @@ body {
   margin-block: 1.75rem;
   border: 1px solid var(--color-granite-100);
   border-radius: 1rem;
-  background: white;
+  background: var(--pbox-bg, white);
   padding: 1.25rem;
-  box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
 }
 .pbox-badge {
   display: inline-block;
-  background: var(--color-ember);
+  background: var(--pbox-badge, var(--color-ember));
   color: white;
   font-size: 0.72rem;
   font-weight: 700;
@@ -202,8 +201,17 @@ body {
 }
 @media (min-width: 640px) {
   .pbox-main {
-    grid-template-columns: 180px 1fr;
+    grid-template-columns: var(--pbox-img, 180px) 1fr;
     align-items: start;
+  }
+  .pbox--img-right .pbox-main {
+    grid-template-columns: 1fr var(--pbox-img, 180px);
+  }
+  .pbox--img-right .pbox-img {
+    order: 2;
+  }
+  .pbox--compact .pbox-main {
+    align-items: center;
   }
 }
 .pbox-img {
@@ -319,7 +327,8 @@ body {
 }
 .pbox-btn {
   display: inline-block;
-  background: var(--color-ember);
+  text-align: center;
+  background: var(--pbox-accent, var(--color-ember));
   color: white !important;
   font-weight: 700;
   padding: 0.7rem 1.5rem;
@@ -333,6 +342,65 @@ body {
 .pbox-btn span {
   font-weight: 500;
   opacity: 0.9;
+}
+/* Box design options (Settings > Affiliate Links, or per product) */
+.pbox--shadow {
+  box-shadow: 0 6px 20px -8px rgb(0 0 0 / 0.18);
+}
+.pbox--border-accent {
+  border: 2px solid var(--pbox-accent);
+}
+.pbox--border-none {
+  border-color: transparent;
+}
+.pbox--btn-rounded .pbox-btn {
+  border-radius: 0.5rem;
+}
+.pbox--btn-square .pbox-btn {
+  border-radius: 0;
+}
+.pbox--btn-full .pbox-cta {
+  flex-direction: column;
+  align-items: stretch;
+}
+.pbox--btn-full .pbox-btn {
+  display: block;
+}
+.pbox--stacked .pbox-main {
+  grid-template-columns: 1fr !important;
+}
+.pbox--stacked .pbox-img {
+  aspect-ratio: auto;
+  height: calc(var(--pbox-img, 180px) * 1.2);
+}
+.pbox--compact {
+  padding: 0.9rem 1rem;
+}
+.pbox--compact .pbox-img {
+  padding: 0.4rem;
+}
+.pbox--compact .pbox-name {
+  font-size: 1.05rem;
+}
+.pbox--compact .pbox-body > * + * {
+  margin-top: 0.35rem;
+}
+@media (max-width: 639px) {
+  .pbox-img {
+    max-width: 260px;
+    width: 100%;
+    margin-inline: auto;
+  }
+  .pbox--compact .pbox-main {
+    grid-template-columns: var(--pbox-img, 108px) 1fr;
+    gap: 0.9rem;
+  }
+  .pbox--compact.pbox--img-right .pbox-main {
+    grid-template-columns: 1fr var(--pbox-img, 108px);
+  }
+  .pbox--compact.pbox--img-right .pbox-img {
+    order: 2;
+  }
 }
 .ptable {
   margin-block: 1.75rem;

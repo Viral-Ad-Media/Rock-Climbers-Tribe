@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db, schema } from "@/db";
 import type { Product } from "@/db/schema";
+import { parseBoxDesign } from "@/lib/products";
 import { slugify } from "@/lib/seo/analyze";
 import { requireStaff } from "@/lib/session";
 
@@ -55,6 +56,8 @@ export async function saveProduct(_prev: ProductState, form: FormData): Promise<
     pros: nullable(form, "pros"),
     cons: nullable(form, "cons"),
     buttonText: nullable(form, "buttonText"),
+    // Re-validated so only known keys and safe colors are stored
+    design: str(form, "design") ? JSON.stringify(parseBoxDesign(str(form, "design"))) : null,
     updatedAt: new Date(),
   };
   let productId = id;

@@ -6,7 +6,7 @@ import { categoryLabel, readingLabel } from "@/lib/blog";
 import { getApprovedComments, getPostBySlug, getProductsBySlugs, getRelatedPosts } from "@/lib/content";
 import { getOptions } from "@/lib/options";
 import { buildPostSchema, jsonLd } from "@/lib/seo/schema";
-import { extractProductSlugs, renderProductShortcodes } from "@/lib/products";
+import { extractProductSlugs, parseBoxDesign, renderProductShortcodes } from "@/lib/products";
 import { formatDate, site } from "@/lib/site";
 import { withHeadingIds } from "@/lib/toc";
 import { CommentForm } from "./comment-form";
@@ -25,6 +25,7 @@ export async function Article({ post, preview = false }: { post: FullPost; previ
     newTab: options.affiliate_new_tab === "1",
     buttonText: options.affiliate_button_text,
     lang: post.lang,
+    design: parseBoxDesign(options.affiliate_box_design),
   });
   // Table of contents: the site-wide setting for this post type, then the post's own switch
   const tocAllowed = (post.type === "page" ? options.toc_enabled_pages : options.toc_enabled_posts) === "1";

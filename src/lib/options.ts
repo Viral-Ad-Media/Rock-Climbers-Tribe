@@ -32,6 +32,8 @@ export const OPTION_DEFAULTS = {
   toc_title_es: "En este artículo",
   affiliate_new_tab: "1",
   affiliate_button_text: "Check Price",
+  /** JSON BoxDesign, see src/lib/products.ts. Empty uses the built-in default */
+  affiliate_box_design: "",
 } as const;
 
 export type OptionKey = keyof typeof OPTION_DEFAULTS;
