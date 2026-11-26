@@ -1,30 +1,38 @@
 import type { Metadata } from "next";
 import { Inter, Roboto_Slab } from "next/font/google";
 import Script from "next/script";
-import { SiteFooter } from "@/components/site-footer";
-import { SiteHeader } from "@/components/site-header";
+import { getOptions } from "@/lib/options";
 import { site } from "@/lib/site";
 import "./globals.css";
 
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
 const slab = Roboto_Slab({ variable: "--font-slab", subsets: ["latin"], weight: ["500", "700"] });
 
-export const metadata: Metadata = {
-  metadataBase: new URL(site.url),
-  title: { default: `${site.name}: ${site.tagline}`, template: `%s | ${site.name}` },
-  description: site.description,
-  openGraph: { siteName: site.name, type: "website", locale: "en_US" },
-  twitter: { card: "summary_large_image" },
-  verification: site.googleVerification ? { google: site.googleVerification } : undefined,
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const o = await getOptions();
+  const name = o.blogname || site.name;
+  const sep = o.seo_separator || "|";
+  return {
+    metadataBase: new URL(site.url),
+    title: { default: o.seo_home_title || `${name} ${sep} ${o.blogdescription}`, template: `%s ${sep} ${name}` },
+    description: o.seo_home_description || o.site_description,
+    robots: o.blog_public === "0" ? { index: false, follow: false } : undefined,
+    openGraph: {
+      siteName: name,
+      type: "website",
+      locale: "en_US",
+      images: o.seo_default_og_image ? [o.seo_default_og_image] : undefined,
+    },
+    twitter: { card: "summary_large_image", site: o.seo_twitter_username ? `@${o.seo_twitter_username.replace(/^@/, "")}` : undefined },
+    verification: site.googleVerification ? { google: site.googleVerification } : undefined,
+  };
+}
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${inter.variable} ${slab.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col font-sans">
-        <SiteHeader />
-        <main className="flex-1">{children}</main>
-        <SiteFooter />
+        {children}
         <Analytics />
       </body>
     </html>

@@ -1,7 +1,12 @@
 import Link from "next/link";
+import { SiteFooter } from "@/components/site-footer";
+import { SiteHeader } from "@/components/site-header";
 
 export default function NotFound() {
   return (
+    <>
+    <SiteHeader />
+    <main className="flex-1">
     <div className="mx-auto max-w-xl px-4 py-24 text-center">
       <p className="font-display text-6xl font-bold text-moss-600">404</p>
       <h1 className="mt-4 font-display text-2xl font-bold">That route doesn’t go anywhere</h1>
@@ -15,5 +20,8 @@ export default function NotFound() {
         </Link>
       </div>
     </div>
+    </main>
+    <SiteFooter />
+    </>
   );
 }

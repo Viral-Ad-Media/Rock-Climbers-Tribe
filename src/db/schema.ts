@@ -1,5 +1,6 @@
 import {
   boolean,
+  customType,
   index,
   integer,
   pgTable,
@@ -102,11 +103,24 @@ export const post = pgTable(
     content: text("content").notNull().default(""),
     coverImage: text("cover_image"),
     author: text("author"),
-    /** "publish" | "draft" */
+    /** "publish" | "draft" | "pending" | "private" | "trash". A publish date in the future means scheduled. */
     status: text("status").notNull().default("draft"),
     lang: text("lang").notNull().default("en"),
     seoTitle: text("seo_title"),
     seoDescription: text("seo_description"),
+    /** Rank Math-style focus keywords, comma separated; the first one is the primary keyword */
+    focusKeyword: text("focus_keyword"),
+    /** Last computed SEO score (0-100), refreshed on every save */
+    seoScore: integer("seo_score"),
+    canonicalUrl: text("canonical_url"),
+    robotsNoindex: boolean("robots_noindex").notNull().default(false),
+    /** Schema.org type for the article: "BlogPosting" | "Article" | "NewsArticle" | "none" */
+    schemaType: text("schema_type").notNull().default("BlogPosting"),
+    coverImageAlt: text("cover_image_alt"),
+    /** "open" | "closed" */
+    commentStatus: text("comment_status").notNull().default("open"),
+    /** Status before it was trashed, so Restore puts it back */
+    trashedFrom: text("trashed_from"),
     publishedAt: timestamp("published_at"),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
     /** WordPress post ID, kept so re-imports update instead of duplicating */
@@ -128,6 +142,78 @@ export const postCategory = pgTable(
   (t) => [primaryKey({ columns: [t.postId, t.categoryId] })],
 );
 
+export const tag = pgTable("tag", {
+  id: serial("id").primaryKey(),
+  slug: text("slug").notNull().unique(),
+  name: text("name").notNull(),
+  description: text("description"),
+});
+
+export const postTag = pgTable(
+  "post_tag",
+  {
+    postId: integer("post_id")
+      .notNull()
+      .references(() => post.id, { onDelete: "cascade" }),
+    tagId: integer("tag_id")
+      .notNull()
+      .references(() => tag.id, { onDelete: "cascade" }),
+  },
+  (t) => [primaryKey({ columns: [t.postId, t.tagId] })],
+);
+
+export const comment = pgTable(
+  "comment",
+  {
+    id: serial("id").primaryKey(),
+    postId: integer("post_id")
+      .notNull()
+      .references(() => post.id, { onDelete: "cascade" }),
+    parentId: integer("parent_id"),
+    authorName: text("author_name").notNull(),
+    authorEmail: text("author_email"),
+    authorUrl: text("author_url"),
+    userId: text("user_id"),
+    content: text("content").notNull(),
+    /** "pending" | "approved" | "spam" | "trash" */
+    status: text("status").notNull().default("pending"),
+    ip: text("ip"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("comment_post_status_idx").on(t.postId, t.status)],
+);
+
+/** bytea that works over both node-postgres and Neon's HTTP driver (which returns hex strings) */
+const bytea = customType<{ data: Buffer; driverData: Buffer | string }>({
+  dataType: () => "bytea",
+  toDriver: (value) => `\\x${value.toString("hex")}`,
+  fromDriver: (value) =>
+    typeof value === "string" ? Buffer.from(value.replace(/^\\x/, ""), "hex") : Buffer.from(value),
+});
+
+/** Media library. Uploaded files live in `data`; imported WordPress files are served from /public via `url`. */
+export const media = pgTable("media", {
+  id: serial("id").primaryKey(),
+  url: text("url").notNull().unique(),
+  filename: text("filename").notNull(),
+  mimeType: text("mime_type").notNull(),
+  size: integer("size"),
+  width: integer("width"),
+  height: integer("height"),
+  title: text("title"),
+  alt: text("alt"),
+  caption: text("caption"),
+  data: bytea("data"),
+  uploadedBy: text("uploaded_by"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+/** Site settings, like wp_options */
+export const option = pgTable("option", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull(),
+});
+
 /** Old URLs (renamed slugs from WordPress) that should permanently redirect */
 export const redirect = pgTable("redirect", {
   source: text("source").primaryKey(),
@@ -136,3 +222,6 @@ export const redirect = pgTable("redirect", {
 
 export type Post = typeof post.$inferSelect;
 export type Category = typeof category.$inferSelect;
+export type Tag = typeof tag.$inferSelect;
+export type Comment = typeof comment.$inferSelect;
+export type Media = typeof media.$inferSelect;
